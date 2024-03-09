@@ -1,36 +1,61 @@
 import unittest
-from calculator.lexer import Lexer
+from calculator.lexer import Lexer, TokenType, Token
 
 class TestLexer(unittest.TestCase):
-    def test_get_mul_op(self):
-        lexer = Lexer('*')
-        self.assertEqual(lexer.get_mul_op(), '*', "Failed to recognize multiplication operator")
-        lexer = Lexer('+')
-        self.assertIsNone(lexer.get_mul_op(), "Incorrectly recognized multiplication operator")
+    def test_number(self):
+        lexer = Lexer("123")
+        token = lexer.get_token()
+        self.assertEqual(token, Token(TokenType.NUMBER, 123))
+        
+        lexer = Lexer("3.1415")
+        token = lexer.get_token()
+        self.assertEqual(token, Token(TokenType.NUMBER, 3.1415))
 
-    def test_get_power_op(self):
-        lexer = Lexer('^')
-        self.assertEqual(lexer.get_power_op(), '^', "Failed to recognize power operator")
-        lexer = Lexer('-')
-        self.assertIsNone(lexer.get_power_op(), "Incorrectly recognized power operator")
+    def test_operators(self):
+        operators = {
+            '+': TokenType.ADD_OP,
+            '-': TokenType.SUB_OP,
+            '*': TokenType.MUL_OP,
+            '/': TokenType.DIV_OP,
+            '^': TokenType.POWER_OP,
+            '!': TokenType.FAC_OP,
+        }
+        for char, tokenType in operators.items():
+            with self.subTest(char=char):
+                lexer = Lexer(char)
+                token = lexer.get_token()
+                self.assertEqual(token, Token(tokenType, char))
 
-    def test_get_fac_op(self):
-        lexer = Lexer('!')
-        self.assertEqual(lexer.get_fac_op(), '!', "Failed to recognize factorial operator")
-        lexer = Lexer('/')
-        self.assertIsNone(lexer.get_fac_op(), "Incorrectly recognized factorial operator")
+    def test_parentheses(self):
+        lexer = Lexer("(")
+        token = lexer.get_token()
+        self.assertEqual(token, Token(TokenType.LEFT_PAREN, '('))
+        
+        lexer = Lexer(")")
+        token = lexer.get_token()
+        self.assertEqual(token, Token(TokenType.RIGHT_PAREN, ')'))
 
-    def test_get_left_paren(self):
-        lexer = Lexer('(')
-        self.assertEqual(lexer.get_left_paren(), '(', "Failed to recognize left parenthesis")
-        lexer = Lexer(')')
-        self.assertIsNone(lexer.get_left_paren(), "Incorrectly recognized left parenthesis")
+    def test_expression(self):
+        lexer = Lexer("3 + 4.2 * (1 - 2)")
+        tokens = [
+            Token(TokenType.NUMBER, 3),
+            Token(TokenType.ADD_OP, '+'),
+            Token(TokenType.NUMBER, 4.2),
+            Token(TokenType.MUL_OP, '*'),
+            Token(TokenType.LEFT_PAREN, '('),
+            Token(TokenType.NUMBER, 1),
+            Token(TokenType.SUB_OP, '-'),
+            Token(TokenType.NUMBER, 2),
+            Token(TokenType.RIGHT_PAREN, ')'),
+        ]
+        for expected_token in tokens:
+            token = lexer.get_token()
+            self.assertEqual(token, expected_token)
+        
+        # EOF Token
+        token = lexer.get_token()
+        self.assertEqual(token, Token(TokenType.EOF))
 
-    def test_get_right_paren(self):
-        lexer = Lexer(')')
-        self.assertEqual(lexer.get_right_paren(), ')', "Failed to recognize right parenthesis")
-        lexer = Lexer('(')
-        self.assertIsNone(lexer.get_right_paren(), "Incorrectly recognized right parenthesis")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
+
